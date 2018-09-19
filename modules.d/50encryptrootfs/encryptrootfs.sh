@@ -56,13 +56,15 @@ _create_boot_partition(){
     disk_size_in_mb_output=$(/sbin/parted "$disk_name" unit mb print)
     _check_errors
     _info "Disk size output $disk_size_in_mb_output"
-    disk_size_in_mb=$(echo "${disk_size_in_mb_output}" | grep -e "Disk $disk_name" | grep -o -e "[0-9]*")
+    #disk_size_in_mb=$(echo "${disk_size_in_mb_output}" | grep -e "Disk $disk_name" | grep -o -e "[0-9]*")
+    #get at least a two digit number (hack)
+    disk_size_in_mb=$(echo "${disk_size_in_mb_output}" | grep -e "Disk $disk_name" | grep -o -E "[0-9]{2,}")
     _check_errors
     _info "Disk size is ${disk_size_in_mb}MB"
 
     start_partition=$((disk_size_in_mb-boot_partition_sized_in_mb))
     _info "Boot partition will start from $start_partition"
-    _info "Creating boot partition /sbin/parted $disk_name mkpart primary ext2 $start_partition $disk_size_in_mb"
+    _info "Creating boot partition /sbin/parted $disk_name mkpart primary $fs_type $start_partition $disk_size_in_mb"
     out=$(/sbin/parted "$disk_name" mkpart primary "$fs_type" "$start_partition" "$disk_size_in_mb")
     _check_errors
     _info "Partition creation result ${out}"
@@ -84,14 +86,19 @@ _create_boot_partition(){
         _check_errors "Rereading partitions ${out}"
     fi
 
-    _info "Creating filesystem on boot partition mkfs.ext3 ${disk_name}2"
-    out=$(mkfs."$fs_type" "$disk_name"2)
+    #_info "Creating filesystem on boot partition mkfs.ext3 ${disk_name}2"
+    _info "Creating filesystem on boot partition mkfs.${fs_type} ${disk_name}2"
+    #out=$(mkfs."$fs_type" "$disk_name"2)
+    out=$(mkfs."$fs_type" "$disk_name"p2)
     _check_errors
     _info "Result ${out}"
 
-    _info "Setting boot label e2label ${disk_name}2 boot"
-    out=$(/sbin/e2label "$disk_name"2 boot)
-    _check_errors "/sbin/e2label ${disk_name}2 boot"
+    #_info "Setting boot label e2label ${disk_name}2 boot"
+    _info "Setting boot label e2label ${disk_name}p2 boot"
+    #out=$(/sbin/e2label "$disk_name"2 boot)
+    out=$(/sbin/e2label "$disk_name"p2 boot)
+    #_check_errors "/sbin/e2label ${disk_name}2 boot"
+    _check_errors "/sbin/e2label ${disk_name}p2 boot"
     _info "Result ${out}"
 }
 
